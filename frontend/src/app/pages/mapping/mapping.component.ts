@@ -1,10 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { forkJoin } from 'rxjs';
+import { forkJoin, interval, Subscription } from 'rxjs';
+import { switchMap, takeWhile } from 'rxjs/operators';
 import { MappingService } from '../../services/mapping.service';
 import { CohortService } from '../../services/cohort.service';
+import { AIWorkflowService, WorkflowResponse } from '../../services/ai-workflow.service';
 import { Mapping } from '../../models/mapping.model';
 import { Cohort } from '../../models/cohort.model';
 import { Candidate } from '../../models/candidate.model';
@@ -33,7 +35,7 @@ interface MappingRow {
   templateUrl: './mapping.component.html',
   styleUrls: ['./mapping.component.css']
 })
-export class MappingComponent implements OnInit {
+export class MappingComponent implements OnInit, OnDestroy {
   cohorts: Cohort[] = [];
   selectedCohortId: number | null = null;
   cohortId: number = 0;
@@ -51,11 +53,23 @@ export class MappingComponent implements OnInit {
   notification: { message: string; type: 'success' | 'error' | 'warning' } | null = null;
   loading: boolean = false;
 
+  // AI Workflow state
+  aiLoading: boolean = false;
+  aiWorkflowId: string | null = null;
+  aiWorkflowStatus: string | null = null;
+  aiMappingSuggestions: any = null;
+  aiValidationResults: any = null;
+  showAIPanel: boolean = false;
+  showApprovalDialog: boolean = false;
+  approvalFeedback: string = '';
+  private pollSub: Subscription | null = null;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private mappingService: MappingService,
-    private cohortService: CohortService
+    private cohortService: CohortService,
+    private aiWorkflowService: AIWorkflowService
   ) {}
 
   ngOnInit(): void {
@@ -329,6 +343,131 @@ export class MappingComponent implements OnInit {
 
   cancelReassign(row: MappingRow): void {
     row.isEditing = false;
+  }
+
+  // ─── AI Workflow Integration ────────────────────────────────────────────────
+
+  ngOnDestroy(): void {
+    this.stopPolling();
+  }
+
+  startAIWorkflow(): void {
+    if (!this.cohortId || this.aiLoading) return;
+
+    this.aiLoading = true;
+    this.aiWorkflowStatus = 'STARTING';
+    this.showAIPanel = true;
+    this.aiMappingSuggestions = null;
+    this.aiValidationResults = null;
+    this.showApprovalDialog = false;
+    this.stopPolling();
+
+    const request = {
+      cohortId: this.cohortId,
+      roundType: this.activeTab,
+      attempt: 1
+    };
+
+    this.aiWorkflowService.startWorkflow(request).subscribe({
+      next: (res: WorkflowResponse) => {
+        this.aiWorkflowId = res.workflowId;
+        this.aiWorkflowStatus = res.status;
+        if (res.humanApprovalRequested) {
+          this.aiLoading = false;
+          this.aiMappingSuggestions = res.mappingSuggestions;
+          this.aiValidationResults = res.validationResults;
+          this.showApprovalDialog = true;
+        } else {
+          this.pollWorkflowStatus(res.workflowId);
+        }
+      },
+      error: (err: any) => {
+        this.aiLoading = false;
+        this.aiWorkflowStatus = 'ERROR';
+        const msg = err.error?.detail || err.error?.message || 'AI workflow failed to start. Is the AI service running?';
+        this.showNotification(msg, 'error');
+      }
+    });
+  }
+
+  private pollWorkflowStatus(workflowId: string): void {
+    this.pollSub = interval(3000).pipe(
+      switchMap(() => this.aiWorkflowService.getWorkflowStatus(workflowId)),
+      takeWhile((res: WorkflowResponse) =>
+        !['COMPLETED', 'FAILED', 'PENDING_APPROVAL'].includes(res.status), true)
+    ).subscribe({
+      next: (res: WorkflowResponse) => {
+        this.aiWorkflowStatus = res.status;
+        if (res.status === 'PENDING_APPROVAL') {
+          this.aiLoading = false;
+          this.aiMappingSuggestions = res.mappingSuggestions;
+          this.aiValidationResults = res.validationResults;
+          this.showApprovalDialog = true;
+          this.stopPolling();
+        } else if (res.status === 'COMPLETED') {
+          this.aiLoading = false;
+          this.showNotification('✅ AI workflow completed! Mappings submitted to EMS.', 'success');
+          this.loadCohortAllData(this.cohortId);
+          this.stopPolling();
+        } else if (res.status === 'FAILED') {
+          this.aiLoading = false;
+          this.showNotification(res.errorMessage || 'AI workflow failed', 'error');
+          this.stopPolling();
+        }
+      },
+      error: (err: any) => {
+        this.aiLoading = false;
+        this.aiWorkflowStatus = 'ERROR';
+        this.showNotification('Lost connection to AI service', 'error');
+        this.stopPolling();
+      }
+    });
+  }
+
+  approveAIMapping(approved: boolean): void {
+    if (!this.aiWorkflowId) return;
+    this.showApprovalDialog = false;
+    this.aiLoading = true;
+    this.aiWorkflowService.approveWorkflow(this.aiWorkflowId, approved, this.approvalFeedback).subscribe({
+      next: (res: WorkflowResponse) => {
+        this.aiWorkflowStatus = res.status;
+        if (approved) {
+          this.aiLoading = false;
+          this.showNotification('✅ AI suggestions approved and submitted to EMS!', 'success');
+          this.loadCohortAllData(this.cohortId);
+        } else {
+          this.aiLoading = false;
+          this.showNotification('AI suggestions rejected. No changes made.', 'warning');
+        }
+        this.approvalFeedback = '';
+      },
+      error: (err: any) => {
+        this.aiLoading = false;
+        this.showNotification('Failed to submit approval', 'error');
+      }
+    });
+  }
+
+  dismissAIPanel(): void {
+    this.showAIPanel = false;
+    this.showApprovalDialog = false;
+    this.stopPolling();
+    if (this.aiLoading) {
+      this.aiLoading = false;
+      this.aiWorkflowStatus = 'CANCELLED';
+    }
+  }
+
+  private stopPolling(): void {
+    if (this.pollSub) {
+      this.pollSub.unsubscribe();
+      this.pollSub = null;
+    }
+  }
+
+  getSuggestionCount(): number {
+    if (!this.aiMappingSuggestions) return 0;
+    return Array.isArray(this.aiMappingSuggestions) ? this.aiMappingSuggestions.length : 0;
   }
 }
 

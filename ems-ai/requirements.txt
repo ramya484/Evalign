@@ -10,7 +10,10 @@ pydantic-settings>=2.0.0
 python-dotenv>=1.0.0
 
 # -- MCP (Model Context Protocol) ----------------------------------
-mcp>=1.0.0
+# FastMCP is bundled inside the official 'mcp' package (v1.x+).
+# Import path: from mcp.server.fastmcp import FastMCP
+# If import fails, try: pip install mcp==1.3.0
+mcp>=1.0.0,<2.0.0
 
 # -- LangChain + Agents --------------------------------------------
 langchain>=0.3.0
