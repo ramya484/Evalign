@@ -1,0 +1,247 @@
+<div class="page-container">
+  
+  <!-- Notification Banner -->
+  <div *ngIf="notification" class="notification-bar" [ngClass]="notification.type">
+    <svg *ngIf="notification.type === 'success'" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+      <polyline points="22 4 12 14.01 9 11.01"></polyline>
+    </svg>
+    <svg *ngIf="notification.type === 'error'" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"></circle>
+      <line x1="12" y1="8" x2="12" y2="12"></line>
+      <line x1="12" y1="16" x2="12.01" y2="16"></line>
+    </svg>
+    <span>{{ notification.message }}</span>
+  </div>
+
+  <!-- Page Header -->
+  <div class="page-header-block">
+    <div class="title-area">
+      <h2>Training Cohort Batches</h2>
+      <p class="subtitle">Overview of training cohorts, candidate allocations, and evaluator mapping progress.</p>
+    </div>
+    <div class="header-actions-group">
+      <button class="btn btn-primary" (click)="openNewCohortModal()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        <span>New Cohort Batch</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Filter & Search Console -->
+  <div class="cohorts-filter-bar">
+    <div class="search-field-wrap">
+      <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input type="text" placeholder="Search cohort name or batch code..." [(ngModel)]="searchTerm" (ngModelChange)="applyFilter()" class="console-search-input">
+    </div>
+
+    <div class="filter-status-select-wrap">
+      <label>Status Filter:</label>
+      <select [(ngModel)]="statusFilter" (ngModelChange)="applyFilter()" class="console-select">
+        <option value="All">All Cohort Statuses</option>
+        <option value="Active">Active</option>
+        <option value="Mapping in Progress">Mapping in Progress</option>
+        <option value="Completed">Completed</option>
+        <option value="Not Started">Not Started</option>
+      </select>
+    </div>
+
+    <div class="cohort-count-chip">
+      <strong>{{ filteredCohorts.length }}</strong> Cohorts
+    </div>
+  </div>
+
+  <!-- Loading Indicator Banner -->
+  <div class="loading-state-banner" *ngIf="loading">
+    <div class="loading-spinner"></div>
+    <span>Loading, please wait...</span>
+  </div>
+
+  <!-- Cohorts Data Table -->
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>COHORT & BATCH</th>
+          <th>CANDIDATES</th>
+          <th>MAPPING PROGRESS</th>
+          <th>START DATE</th>
+          <th>STATUS</th>
+          <th class="text-center">ACTIONS</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let cohort of filteredCohorts">
+          <td>
+            <div class="cohort-name-cell" (click)="openMapping(cohort.cohortId)">
+              <span class="cohort-primary-title">{{ cohort.cohortName }}</span>
+              <span class="batch-code-tag">{{ cohort.batchCode }}</span>
+            </div>
+          </td>
+          <td>
+            <div class="candidate-count-cell">
+              <span class="count-num">{{ cohort.candidateCount }}</span>
+              <span class="count-unit">Candidates</span>
+            </div>
+          </td>
+          <td>
+            <div class="progress-container">
+              <div class="progress-labels">
+                <span class="progress-val">{{ cohort.evaluatorsMapped || 0 }} / {{ cohort.candidateCount }}</span>
+                <span class="progress-pct">
+                  {{ cohort.candidateCount ? (( (cohort.evaluatorsMapped || 0) / cohort.candidateCount) * 100 | number:'1.0-0') : 0 }}%
+                </span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-bar" 
+                     [style.width.%]="cohort.candidateCount ? (((cohort.evaluatorsMapped || 0) / cohort.candidateCount) * 100) : 0">
+                </div>
+              </div>
+            </div>
+          </td>
+          <td>
+            <span class="date-tag">{{ cohort.startDate | date:'dd-MMM-yyyy' }}</span>
+          </td>
+          <td>
+            <div class="status-dropdown-wrap">
+              <select class="cohort-status-select" 
+                      [ngClass]="getStatusClass(cohort.status)"
+                      [ngModel]="cohort.status" 
+                      (ngModelChange)="onStatusChange(cohort, $event)"
+                      title="Change cohort status">
+                <option value="Active">Active</option>
+                <option value="Mapping in Progress">Mapping in Progress</option>
+                <option value="Completed">Completed</option>
+                <option value="Not Started">Not Started</option>
+              </select>
+            </div>
+          </td>
+          <td class="text-center">
+            <div class="cohort-actions-cell">
+              <button class="btn btn-sm btn-outline-primary" (click)="openMapping(cohort.cohortId)" title="Open mapping console">
+                <span>Open Mapping</span>
+                <span>&rarr;</span>
+              </button>
+              <button class="btn btn-sm btn-outline-danger" (click)="deleteCohort(cohort)" title="Delete this cohort batch">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+                <span>Delete</span>
+              </button>
+            </div>
+          </td>
+        </tr>
+        <tr *ngIf="filteredCohorts.length === 0 && !loading">
+          <td colspan="6" class="text-center empty-state">
+            <div class="empty-state-content">
+              <span class="empty-title">No cohorts found</span>
+              <span class="empty-hint">Try adjusting your search criteria or create a new cohort batch.</span>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Progressive View More Section -->
+  <div class="view-more-container" *ngIf="hasMore || loadingMore">
+    <button class="btn btn-secondary view-more-btn" (click)="viewMore()" [disabled]="loadingMore || loading">
+      <span *ngIf="!loadingMore">View More</span>
+      <span *ngIf="loadingMore">Loading, please wait...</span>
+    </button>
+  </div>
+
+</div>
+
+<!-- Create New Cohort Modal with Candidate Excel Upload -->
+<div class="modal-overlay" *ngIf="showModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Create New Cohort Batch</h3>
+      <button class="close-btn" (click)="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      
+      <div *ngIf="modalError" class="validation-error-banner">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        <span>{{ modalError }}</span>
+      </div>
+
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label>Cohort Name *</label>
+          <input type="text" [(ngModel)]="newCohort.cohortName" placeholder="e.g. Batch-4 (DevOps & Cloud)" class="form-input">
+        </div>
+        <div class="form-group">
+          <label>Batch Code *</label>
+          <input type="text" [(ngModel)]="newCohort.batchCode" placeholder="e.g. BATCH-04" class="form-input">
+        </div>
+      </div>
+
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label>Start Date</label>
+          <input type="date" [(ngModel)]="newCohort.startDate" class="form-input">
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select [(ngModel)]="newCohort.status" class="form-select">
+            <option value="Active">Active</option>
+            <option value="Mapping in Progress">Mapping in Progress</option>
+            <option value="Completed">Completed</option>
+            <option value="Not Started">Not Started</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Candidate Excel Upload Section -->
+      <div class="form-group excel-upload-section">
+        <label>Upload Candidate Roster (Excel) <span class="label-optional">(Recommended)</span></label>
+        
+        <div class="excel-dropzone" *ngIf="!selectedCandidateFile">
+          <input type="file" id="candidateExcelInput" (change)="onCandidateFileSelected($event)" accept=".xlsx, .xls" class="file-input-hidden">
+          <label for="candidateExcelInput" class="dropzone-label">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="12" y1="18" x2="12" y2="12"></line>
+              <line x1="9" y1="15" x2="15" y2="15"></line>
+            </svg>
+            <span class="drop-text">Click to choose Candidate Excel (<code>.xlsx</code>)</span>
+            <span class="drop-subtext">Automatically creates & maps candidates into this batch</span>
+          </label>
+        </div>
+
+        <div class="file-attached-pill" *ngIf="selectedCandidateFile">
+          <div class="file-info">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+            </svg>
+            <span class="file-name">{{ candidateFileName }}</span>
+          </div>
+          <button type="button" class="btn-remove-file" (click)="removeSelectedFile()" title="Remove file">&times;</button>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeModal()" [disabled]="savingCohort">Cancel</button>
+      <button class="btn btn-primary" (click)="saveCohort()" [disabled]="!newCohort.cohortName || !newCohort.batchCode || savingCohort">
+        <span *ngIf="!savingCohort">Create Cohort Batch</span>
+        <span *ngIf="savingCohort">Creating & Uploading...</span>
+      </button>
+    </div>
+  </div>
+</div>

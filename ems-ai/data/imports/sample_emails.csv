@@ -1,0 +1,11 @@
+message_id,sender_email,recipient_email,subject,body_text,received_date,folder_name
+<ooo-001@company.com>,rahul.sharma@company.com,poc@company.com,"Out of Office: Dec 1-5","Hi, I am currently out of office from December 1 to December 5. For urgent matters please contact my manager.",2024-11-20 09:00:00,INBOX
+<ooo-002@company.com>,priya.evaluator@company.com,poc@company.com,"OOO Auto-Reply: Away Dec 3-7","This is an automatic reply. I am away from Dec 3 to Dec 7. I will respond on my return.",2024-11-21 08:30:00,INBOX
+<leave-001@company.com>,ankit.gupta@company.com,hr@company.com,"Leave Request: Nov 28 - Dec 2","Please approve my leave from November 28 to December 2 for personal reasons.",2024-11-18 10:00:00,INBOX
+<proj-001@company.com>,manager@company.com,poc@company.com,"Project Reassignment – John Evaluator","Please note that John has been assigned to the Cloud Migration project full-time from Dec 1. He will be unavailable for interviews.",2024-11-19 14:00:00,INBOX
+<avail-001@company.com>,meera.sme@company.com,poc@company.com,"Re: Interview Schedule Batch-1","Hi, I am available for Batch-1 interviews in the first week of December. Please assign me.",2024-11-20 11:00:00,INBOX
+<avail-002@company.com>,suresh.kumar@company.com,poc@company.com,"Interview Availability","I am free for evaluations from Dec 1-10. Happy to take interim or final rounds.",2024-11-21 12:00:00,INBOX
+<ooo-003@company.com>,deepa.verma@company.com,poc@company.com,"Out of Office until Dec 15","I am on medical leave until December 15. I will not be available for any evaluations during this period.",2024-11-22 09:00:00,INBOX
+<sched-001@company.com>,poc@company.com,batch-team@company.com,"Batch-1 Interview Schedule – Week of Dec 2","Please find the preliminary interview schedule for Batch-1 DS Track. Interim round will run Dec 2-4.",2024-11-20 15:00:00,SENT
+<reschedule-001@company.com>,alice.evaluator@company.com,poc@company.com,"Re: Interview Reschedule Request","Could we reschedule my slot from Dec 2 to Dec 5? I have a conflict on Dec 2.",2024-11-21 16:00:00,INBOX
+<confirm-001@company.com>,poc@company.com,evaluators@company.com,"Interview Confirmation – Batch-2 Final Round","Please confirm your availability for the Final round interviews for Batch-2 from Dec 8-10.",2024-11-22 10:00:00,SENT
