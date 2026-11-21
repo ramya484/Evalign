@@ -29,5 +29,5 @@ mcp.tool()(search_evaluator_data)
 mcp.tool()(get_ems_data)
 
 if __name__ == "__main__":
-    logger.info("Starting EMS Outlook MCP Server…")
+    logger.info("Starting EMS Outlook MCP ServerÂ…")
     mcp.run()

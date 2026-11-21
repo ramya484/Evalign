@@ -51,7 +51,7 @@ async def initialize_workflow_node(state: EMSWorkflowState) -> dict:
 
 
 async def availability_check_node(state: EMSWorkflowState) -> dict:
-    """Run Agent 1 – Evaluator Availability Agent."""
+    """Run Agent 1 Â– Evaluator Availability Agent."""
     logger.info("Node: availability_check | workflow=%s", state["workflow_id"])
     try:
         # Fetch evaluator emails from EMS API
@@ -89,7 +89,7 @@ async def availability_check_node(state: EMSWorkflowState) -> dict:
 
 
 async def mapping_suggestion_node(state: EMSWorkflowState) -> dict:
-    """Run Agent 2 – Evaluator Mapping Agent."""
+    """Run Agent 2 Â– Evaluator Mapping Agent."""
     logger.info("Node: mapping_suggestion | workflow=%s", state["workflow_id"])
     try:
         llm = create_llm()
@@ -115,7 +115,7 @@ async def mapping_suggestion_node(state: EMSWorkflowState) -> dict:
 
 
 async def validation_node(state: EMSWorkflowState) -> dict:
-    """Run Agent 3 – Mapping Validation Agent."""
+    """Run Agent 3 Â– Mapping Validation Agent."""
     logger.info("Node: validation | workflow=%s", state["workflow_id"])
     try:
         suggestions = state.get("mapping_suggestions") or {}
@@ -158,7 +158,7 @@ async def validation_node(state: EMSWorkflowState) -> dict:
 
 async def human_approval_node(state: EMSWorkflowState) -> dict:
     """
-    Interrupt point – pauses workflow for human approval.
+    Interrupt point Â– pauses workflow for human approval.
     LangGraph interrupt() pauses here until resume is called with human_approved=True/False.
     """
     from langgraph.types import interrupt

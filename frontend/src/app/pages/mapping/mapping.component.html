@@ -172,10 +172,48 @@
           <pre class="ai-json-preview">{{ aiValidationResults | json }}</pre>
         </div>
 
-        <!-- Mapping suggestions -->
+        <!-- Mapping suggestions with Outlook citations -->
         <div class="ai-suggestions-list">
-          <strong>Mapping Suggestions:</strong>
-          <pre class="ai-json-preview">{{ aiMappingSuggestions | json }}</pre>
+          <div class="suggestions-header-bar">
+            <strong>Proposed Assignments & Outlook Evidence:</strong>
+            <span class="text-muted text-xs">Cross-referenced against centralized Outlook duplicate DB</span>
+          </div>
+
+          <div class="ai-assignments-cards" *ngIf="aiMappingSuggestions?.assignments">
+            <div class="ai-assignment-card" *ngFor="let item of aiMappingSuggestions.assignments">
+              <div class="assignment-header-row">
+                <span class="cand-badge">Candidate: <strong>{{ item.candidate_name }}</strong></span>
+                <span class="arrow-sym">&rarr;</span>
+                <span class="eval-badge">Evaluator: <strong>{{ item.evaluator_name }}</strong></span>
+                <span class="badge badge-green" *ngIf="!item.conflict_warning">Eligible</span>
+                <span class="badge badge-orange" *ngIf="item.conflict_warning">Conflict Flag</span>
+              </div>
+              <p class="assignment-reasoning">{{ item.reasoning }}</p>
+
+              <!-- Supporting Outlook Email Evidence -->
+              <div class="ai-email-citation" *ngIf="item.supporting_email_references && item.supporting_email_references.length > 0">
+                <div class="citation-head">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                    <polyline points="22,6 12,13 2,6"></polyline>
+                  </svg>
+                  <span>Supporting Outlook Email #{{ item.supporting_email_references[0].email_id }} &bull; {{ item.supporting_email_references[0].date }}</span>
+                </div>
+                <div class="citation-quote">
+                  "{{ item.supporting_email_references[0].quote || item.supporting_email_references[0].subject }}"
+                </div>
+              </div>
+
+              <!-- Conflict Warning -->
+              <div class="conflict-alert-box" *ngIf="item.conflict_warning">
+                ⚠️ {{ item.conflict_warning }}
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="!aiMappingSuggestions?.assignments">
+            <pre class="ai-json-preview">{{ aiMappingSuggestions | json }}</pre>
+          </div>
         </div>
 
         <!-- Optional feedback -->

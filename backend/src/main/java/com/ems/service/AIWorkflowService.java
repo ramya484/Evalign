@@ -1,4 +1,4 @@
-package com.ems.service;
+﻿package com.ems.service;
 
 import com.ems.dto.AIWorkflowRequest;
 import com.ems.dto.AIWorkflowResponse;
@@ -24,6 +24,42 @@ public class AIWorkflowService {
         headers.setContentType(MediaType.APPLICATION_JSON);
         return headers;
     }
+
+    // -------------------------------------------------------------------------
+    // Agent 1: Training Cohorts + Outlook Integration
+    // -------------------------------------------------------------------------
+
+    public Map<String, Object> analyzeCohort(Map<String, Object> request) {
+        try {
+            String url = aiServiceUrl + "/api/ai/cohort/analyze";
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(request != null ? request : new HashMap<>(), jsonHeaders());
+            ResponseEntity<Map> response = restTemplate.postForEntity(url, entity, Map.class);
+            return response.getBody() != null ? response.getBody() : new HashMap<>();
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("status", "ERROR");
+            error.put("summary", "Agent 1 error: " + e.getMessage());
+            error.put("findings", java.util.Collections.emptyList());
+            return error;
+        }
+    }
+
+    public Map<String, Object> getCohortAnalysis(Long cohortId) {
+        try {
+            String url = aiServiceUrl + "/api/ai/cohort/" + cohortId + "/analysis";
+            ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
+            return response.getBody() != null ? response.getBody() : new HashMap<>();
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("status", "ERROR");
+            error.put("summary", "Agent 1 error: " + e.getMessage());
+            return error;
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Agent 2: Evaluator Mapping + Outlook Integration
+    // -------------------------------------------------------------------------
 
     public AIWorkflowResponse startWorkflow(AIWorkflowRequest request) {
         try {
@@ -81,6 +117,68 @@ public class AIWorkflowService {
             return new AIWorkflowResponse(workflowId, "ERROR", null, e.getMessage());
         }
     }
+
+    // -------------------------------------------------------------------------
+    // Agent 3: Shortlisting Agent (Shared by Dashboard and Pool)
+    // -------------------------------------------------------------------------
+
+    public Map<String, Object> runShortlisting(Map<String, Object> request) {
+        try {
+            String url = aiServiceUrl + "/api/ai/shortlist/run";
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(request != null ? request : new HashMap<>(), jsonHeaders());
+            ResponseEntity<Map> response = restTemplate.postForEntity(url, entity, Map.class);
+            return response.getBody() != null ? response.getBody() : new HashMap<>();
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("execution_status", "ERROR");
+            error.put("summary", "Agent 3 error: " + e.getMessage());
+            return error;
+        }
+    }
+
+    public Map<String, Object> getShortlistStats() {
+        try {
+            String url = aiServiceUrl + "/api/ai/shortlist/stats";
+            ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
+            return response.getBody() != null ? response.getBody() : new HashMap<>();
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("execution_status", "ERROR");
+            error.put("error", e.getMessage());
+            return error;
+        }
+    }
+
+    public Map<String, Object> getShortlistResults() {
+        try {
+            String url = aiServiceUrl + "/api/ai/shortlist/results";
+            ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
+            return response.getBody() != null ? response.getBody() : new HashMap<>();
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            error.put("recommendations", java.util.Collections.emptyList());
+            return error;
+        }
+    }
+
+    public Map<String, Object> submitShortlistDecision(Map<String, Object> request) {
+        try {
+            String url = aiServiceUrl + "/api/ai/shortlist/decision";
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(request, jsonHeaders());
+            ResponseEntity<Map> response = restTemplate.postForEntity(url, entity, Map.class);
+            return response.getBody() != null ? response.getBody() : new HashMap<>();
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", "Error submitting decision: " + e.getMessage());
+            return error;
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Health Check
+    // -------------------------------------------------------------------------
 
     public Map<String, String> checkAIServiceHealth() {
         Map<String, String> result = new HashMap<>();

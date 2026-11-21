@@ -662,3 +662,101 @@
   flex-wrap: wrap;
   align-items: center;
 }
+
+/* --------------------------------------------------------------------------
+   Agent 2 – Outlook Email Citations in Mapping Approval
+   -------------------------------------------------------------------------- */
+.suggestions-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ai-assignments-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.ai-assignment-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.82rem;
+}
+
+.assignment-header-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cand-badge {
+  background: #eff6ff;
+  color: #1d4ed8;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.arrow-sym {
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+.eval-badge {
+  background: #f0fdf4;
+  color: #15803d;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.assignment-reasoning {
+  font-size: 0.78rem;
+  color: #475569;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.ai-email-citation {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-left: 3px solid #2563eb;
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 0.75rem;
+}
+
+.citation-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #1d4ed8;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.citation-quote {
+  color: #64748b;
+  font-style: italic;
+}
+
+.conflict-alert-box {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 4px;
+  color: #c2410c;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}

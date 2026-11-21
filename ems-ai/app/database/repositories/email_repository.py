@@ -1,4 +1,4 @@
-"""EmailRepository – all DB operations for Outlook email/attachment data."""
+"""EmailRepository Â– all DB operations for Outlook email/attachment data."""
 from __future__ import annotations
 import json
 from datetime import datetime

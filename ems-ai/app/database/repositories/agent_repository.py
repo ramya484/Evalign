@@ -1,4 +1,4 @@
-"""AgentRepository – operations for agent_execution_log."""
+"""AgentRepository Â– operations for agent_execution_log."""
 from __future__ import annotations
 import json
 from datetime import datetime

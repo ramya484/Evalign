@@ -1,5 +1,5 @@
 """
-LangGraph StateGraph – EMS multi-agent orchestration.
+LangGraph StateGraph Â– EMS multi-agent orchestration.
 Builds and compiles the graph with interrupt_before=["human_approval"] for human-in-the-loop.
 """
 from __future__ import annotations

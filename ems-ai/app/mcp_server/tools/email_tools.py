@@ -1,5 +1,5 @@
 """
-MCP Email Tools – 6 tools for searching/retrieving Outlook emails.
+MCP Email Tools Â– 6 tools for searching/retrieving Outlook emails.
 All tools access the DB through EmailRepository only (no raw SQL exposed).
 """
 from __future__ import annotations

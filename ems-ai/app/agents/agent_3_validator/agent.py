@@ -1,5 +1,5 @@
 """
-Agent 3 – Mapping Validation Agent
+Agent 3 Â– Mapping Validation Agent
 Validates proposed assignments against all 5 EMS business rules.
 """
 from __future__ import annotations

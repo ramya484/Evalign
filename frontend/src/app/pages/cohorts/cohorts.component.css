@@ -407,3 +407,314 @@
   cursor: not-allowed;
 }
 
+
+/* --------------------------------------------------------------------------
+   Agent 1 – Training Cohorts & Outlook Intelligence Styles
+   -------------------------------------------------------------------------- */
+.btn-ai-agent1 {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #0284c7, #2563eb);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.18s, box-shadow 0.18s;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+}
+
+.btn-ai-agent1:hover:not(:disabled) {
+  opacity: 0.92;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+}
+
+.btn-ai-agent1:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn-action-audit {
+  padding: 5px 10px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-action-audit:hover {
+  background: #dbeafe;
+}
+
+/* Agent 1 Audit Panel */
+.agent1-audit-panel {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-left: 4px solid #2563eb;
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+}
+
+.agent1-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.agent1-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.agent1-icon-badge {
+  font-size: 1.5rem;
+  background: #dbeafe;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.agent1-header h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 2px 0;
+}
+
+.agent1-sub {
+  font-size: 0.82rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.btn-close-panel {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+.btn-close-panel:hover {
+  color: #0f172a;
+  background: #e2e8f0;
+}
+
+.agent1-loading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px;
+  color: #2563eb;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+/* Metrics bar */
+.agent1-metrics-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.agent1-metric-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: #334155;
+}
+
+.chip-label {
+  color: #64748b;
+}
+
+.agent1-summary-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  color: #1e40af;
+  font-size: 0.85rem;
+  margin-bottom: 16px;
+  line-height: 1.45;
+}
+
+/* Category Tabs */
+.agent1-category-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.agent1-category-tabs button {
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.agent1-category-tabs button.active {
+  background: #2563eb;
+  color: #fff;
+  border-color: #2563eb;
+}
+
+/* Findings Grid */
+.agent1-findings-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.agent1-finding-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: box-shadow 0.15s;
+}
+
+.agent1-finding-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.agent1-finding-card.critical {
+  border-left: 4px solid #ef4444;
+}
+
+.agent1-finding-card.warning {
+  border-left: 4px solid #f59e0b;
+}
+
+.finding-top-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.finding-category-tag {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.finding-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.finding-description {
+  font-size: 0.84rem;
+  color: #334155;
+  margin: 0;
+  line-height: 1.45;
+}
+
+/* Email Citation Box */
+.email-citation-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.citation-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: #1d4ed8;
+}
+
+.citation-date {
+  color: #64748b;
+  font-size: 0.75rem;
+  margin-left: auto;
+}
+
+.citation-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 0.78rem;
+  color: #475569;
+  flex-wrap: wrap;
+}
+
+.citation-snippet {
+  font-size: 0.77rem;
+  color: #64748b;
+  font-style: italic;
+  background: #fff;
+  border-left: 3px solid #94a3b8;
+  padding: 4px 8px;
+  margin-top: 2px;
+}
+
+.finding-rec-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.82rem;
+  padding-top: 4px;
+}
+
+.rec-label {
+  font-weight: 700;
+  color: #047857;
+  white-space: nowrap;
+}
+
+.rec-text {
+  color: #065f46;
+}
+
+.empty-findings-state {
+  padding: 16px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.84rem;
+}

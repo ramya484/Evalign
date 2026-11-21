@@ -8,7 +8,7 @@ from app.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
-# Column aliases – maps CSV header -> canonical field
+# Column aliases Â– maps CSV header -> canonical field
 _FIELD_MAP = {
     "subject":"subject","Subject":"subject","SUBJECT":"subject",
     "from":"sender_email","From":"sender_email","From:":"sender_email","sender":"sender_email","Sender":"sender_email",

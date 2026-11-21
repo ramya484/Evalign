@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CohortService } from '../../services/cohort.service';
+import { AIWorkflowService, CohortAnalysisResult, CohortFinding, EmailCitation } from '../../services/ai-workflow.service';
 import { Cohort } from '../../models/cohort.model';
 
 @Component({
@@ -19,7 +20,7 @@ export class CohortsComponent implements OnInit {
   statusFilter: string = 'All';
   showModal: boolean = false;
   
-  notification: { message: string; type: 'success' | 'error' } | null = null;
+  notification: { message: string; type: 'success' | 'error' | 'warning' } | null = null;
   modalError: string = '';
   savingCohort: boolean = false;
   selectedCandidateFile: File | null = null;
@@ -39,18 +40,86 @@ export class CohortsComponent implements OnInit {
   page: number = 0;
   pageSize: number = 10;
 
-  constructor(private cohortService: CohortService, private router: Router) {}
+  // ---------------------------------------------------------------------------
+  // Agent 1 – Training Cohorts & Outlook Communications Intelligence State
+  // ---------------------------------------------------------------------------
+  agent1Loading: boolean = false;
+  agent1Analysis: CohortAnalysisResult | null = null;
+  showAgent1Panel: boolean = false;
+  selectedCohortForAgent1: Cohort | null = null;
+  agent1FilterCategory: string = 'ALL';
+
+  constructor(
+    private cohortService: CohortService,
+    private router: Router,
+    private aiWorkflowService: AIWorkflowService
+  ) {}
 
   ngOnInit(): void {
     this.loadCohorts(true);
   }
 
-  showNotification(message: string, type: 'success' | 'error' = 'success'): void {
+  showNotification(message: string, type: 'success' | 'error' | 'warning' = 'success'): void {
     this.notification = { message, type };
     setTimeout(() => {
       this.notification = null;
     }, 4500);
   }
+
+  // ---------------------------------------------------------------------------
+  // Agent 1 Actions
+  // ---------------------------------------------------------------------------
+
+  triggerAgent1(cohort?: Cohort): void {
+    this.agent1Loading = true;
+    this.showAgent1Panel = true;
+    this.selectedCohortForAgent1 = cohort || null;
+    this.agent1Analysis = null;
+
+    const payload = cohort ? { cohort_id: cohort.cohortId, batch_code: cohort.batchCode } : {};
+
+    this.aiWorkflowService.analyzeCohort(payload).subscribe({
+      next: (res: CohortAnalysisResult) => {
+        this.agent1Analysis = res;
+        this.agent1Loading = false;
+        const conflictCount = res.findings.filter(f => f.category === 'CONFLICT').length;
+        if (conflictCount > 0) {
+          this.showNotification(`Agent 1: Analyzed ${res.analyzed_emails_count} Outlook emails. Detected ${conflictCount} potential schedule/leave conflicts.`, 'warning');
+        } else {
+          this.showNotification(`Agent 1: Analyzed ${res.analyzed_emails_count} Outlook emails successfully.`, 'success');
+        }
+      },
+      error: (err: any) => {
+        this.agent1Loading = false;
+        const msg = err.error?.detail || err.error?.message || 'Agent 1 failed to analyze Outlook communications.';
+        this.showNotification(msg, 'error');
+      }
+    });
+  }
+
+  closeAgent1Panel(): void {
+    this.showAgent1Panel = false;
+    this.selectedCohortForAgent1 = null;
+  }
+
+  getFilteredFindings(): CohortFinding[] {
+    if (!this.agent1Analysis || !this.agent1Analysis.findings) return [];
+    if (this.agent1FilterCategory === 'ALL') return this.agent1Analysis.findings;
+    return this.agent1Analysis.findings.filter(f => f.category === this.agent1FilterCategory);
+  }
+
+  getSeverityBadgeClass(severity: string): string {
+    switch (severity) {
+      case 'CRITICAL': return 'badge-red';
+      case 'WARNING': return 'badge-orange';
+      case 'INFO': return 'badge-blue';
+      default: return 'badge-blue';
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Cohorts Standard CRUD & List Operations
+  // ---------------------------------------------------------------------------
 
   loadCohorts(reset: boolean = true): void {
     if (reset) {
@@ -205,7 +274,6 @@ export class CohortsComponent implements OnInit {
     this.cohortService.createCohort(this.newCohort).subscribe({
       next: (createdCohort) => {
         if (this.selectedCandidateFile && createdCohort.cohortId) {
-          // Upload Candidate Excel file
           this.cohortService.uploadCandidateExcel(createdCohort.cohortId, this.selectedCandidateFile).subscribe({
             next: (uploadRes) => {
               this.savingCohort = false;

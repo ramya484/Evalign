@@ -1,5 +1,5 @@
 """
-Agent 2 – Evaluator Mapping Agent
+Agent 2 Â– Evaluator Mapping Agent
 Performs intelligent workload-balanced evaluator-to-candidate assignment.
 """
 from __future__ import annotations

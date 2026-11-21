@@ -1,5 +1,5 @@
 """
-EMS AI Service – Main entry point.
+EMS AI Service Â– Main entry point.
 Starts the FastAPI workflow API server.
 
 Usage:

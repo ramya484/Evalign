@@ -1,5 +1,5 @@
 """
-EmailImportService – orchestrates importing emails from CSV / EML into the Outlook duplicate DB.
+EmailImportService Â– orchestrates importing emails from CSV / EML into the Outlook duplicate DB.
 """
 from __future__ import annotations
 import os

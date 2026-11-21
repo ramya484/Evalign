@@ -1,4 +1,4 @@
-"""MCP EMS Tools – 2 tools that call the EMS Spring Boot REST API."""
+"""MCP EMS Tools Â– 2 tools that call the EMS Spring Boot REST API."""
 from __future__ import annotations
 from typing import Optional
 import httpx

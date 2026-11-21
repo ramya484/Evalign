@@ -1,4 +1,4 @@
-"""Pydantic schemas for Agent 2 – Evaluator Mapping Agent."""
+"""Pydantic schemas for Agent 2 Â– Evaluator Mapping Agent."""
 from __future__ import annotations
 from typing import List, Optional, Dict
 from pydantic import BaseModel

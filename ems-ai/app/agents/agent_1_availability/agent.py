@@ -1,5 +1,5 @@
 """
-Agent 1 – Evaluator Availability Agent
+Agent 1 Â– Evaluator Availability Agent
 Uses LangChain ReAct agent + MCP tools to detect evaluator OOO/leave from Outlook emails.
 """
 from __future__ import annotations

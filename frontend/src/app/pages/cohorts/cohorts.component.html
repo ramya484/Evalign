@@ -1,10 +1,15 @@
-<div class="page-container">
+﻿<div class="page-container">
   
   <!-- Notification Banner -->
   <div *ngIf="notification" class="notification-bar" [ngClass]="notification.type">
     <svg *ngIf="notification.type === 'success'" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
       <polyline points="22 4 12 14.01 9 11.01"></polyline>
+    </svg>
+    <svg *ngIf="notification.type === 'warning'" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+      <line x1="12" y1="9" x2="12" y2="13"></line>
+      <line x1="12" y1="17" x2="12.01" y2="17"></line>
     </svg>
     <svg *ngIf="notification.type === 'error'" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
       <circle cx="12" cy="12" r="10"></circle>
@@ -21,6 +26,17 @@
       <p class="subtitle">Overview of training cohorts, candidate allocations, and evaluator mapping progress.</p>
     </div>
     <div class="header-actions-group">
+      <!-- Agent 1 Action Button -->
+      <button class="btn btn-ai-agent1" (click)="triggerAgent1()" [disabled]="agent1Loading || loading" title="Run Agent 1 to analyze Outlook emails, detect schedule conflicts and nominations">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="2" y1="12" x2="22" y2="12"></line>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+        </svg>
+        <span *ngIf="!agent1Loading">🤖 Agent 1: Audit Outlook Communications</span>
+        <span *ngIf="agent1Loading">Agent 1 Analyzing...</span>
+      </button>
+
       <button class="btn btn-primary" (click)="openNewCohortModal()">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -28,6 +44,125 @@
         </svg>
         <span>New Cohort Batch</span>
       </button>
+    </div>
+  </div>
+
+  <!-- ----------------------------------------------------------------------- -->
+  <!-- AGENT 1: Outlook Communications Intelligence Panel                      -->
+  <!-- ----------------------------------------------------------------------- -->
+  <div class="agent1-audit-panel" *ngIf="showAgent1Panel">
+    <div class="agent1-header">
+      <div class="agent1-title-group">
+        <div class="agent1-icon-badge">🤖</div>
+        <div>
+          <h3>Agent 1 - Training Cohorts Outlook Intelligence</h3>
+          <p class="agent1-sub" *ngIf="selectedCohortForAgent1">
+            Analyzing Outlook duplicate database for <strong>{{ selectedCohortForAgent1.cohortName }}</strong> ({{ selectedCohortForAgent1.batchCode }})
+          </p>
+          <p class="agent1-sub" *ngIf="!selectedCohortForAgent1">
+            Cross-referencing all active cohort schedules with centralized Outlook email records
+          </p>
+        </div>
+      </div>
+      <button class="btn-close-panel" (click)="closeAgent1Panel()" title="Close panel">✕</button>
+    </div>
+
+    <!-- Agent 1 Loading Indicator -->
+    <div class="agent1-loading" *ngIf="agent1Loading">
+      <div class="loading-spinner"></div>
+      <span>Agent 1 is querying the centralized Outlook database via Python MCP server...</span>
+    </div>
+
+    <!-- Agent 1 Findings & Insights -->
+    <div *ngIf="agent1Analysis && !agent1Loading">
+      <!-- Metrics Bar -->
+      <div class="agent1-metrics-bar">
+        <div class="agent1-metric-chip">
+          <span class="chip-label">Outlook Emails Analyzed:</span>
+          <strong>{{ agent1Analysis.analyzed_emails_count }}</strong>
+        </div>
+        <div class="agent1-metric-chip">
+          <span class="chip-label">Findings Detected:</span>
+          <strong>{{ agent1Analysis.findings.length }}</strong>
+        </div>
+        <div class="agent1-metric-chip">
+          <span class="chip-label">Audit Status:</span>
+          <span class="badge" [ngClass]="agent1Analysis.status === 'WARNING' ? 'badge-orange' : 'badge-green'">
+            {{ agent1Analysis.status }}
+          </span>
+        </div>
+        <div class="agent1-metric-chip text-muted" *ngIf="agent1Analysis.last_synced_at">
+          <span>Synced: {{ agent1Analysis.last_synced_at }}</span>
+        </div>
+      </div>
+
+      <!-- Summary Card -->
+      <div class="agent1-summary-box">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+        <span>{{ agent1Analysis.summary }}</span>
+      </div>
+
+      <!-- Category Filter Tabs -->
+      <div class="agent1-category-tabs">
+        <button [class.active]="agent1FilterCategory === 'ALL'" (click)="agent1FilterCategory = 'ALL'">
+          All ({{ agent1Analysis.findings.length }})
+        </button>
+        <button [class.active]="agent1FilterCategory === 'CONFLICT'" (click)="agent1FilterCategory = 'CONFLICT'">
+          Conflicts
+        </button>
+        <button [class.active]="agent1FilterCategory === 'SCHEDULE'" (click)="agent1FilterCategory = 'SCHEDULE'">
+          Schedules
+        </button>
+        <button [class.active]="agent1FilterCategory === 'EVALUATOR_NOMINATION'" (click)="agent1FilterCategory = 'EVALUATOR_NOMINATION'">
+          Nominations & Availability
+        </button>
+      </div>
+
+      <!-- Findings List -->
+      <div class="agent1-findings-grid">
+        <div class="agent1-finding-card" *ngFor="let finding of getFilteredFindings()" [class.critical]="finding.severity === 'CRITICAL'" [class.warning]="finding.severity === 'WARNING'">
+          <div class="finding-top-row">
+            <span class="badge" [ngClass]="getSeverityBadgeClass(finding.severity)">{{ finding.severity }}</span>
+            <span class="finding-category-tag">{{ finding.category }}</span>
+            <span class="finding-title">{{ finding.title }}</span>
+          </div>
+
+          <p class="finding-description">{{ finding.description }}</p>
+
+          <!-- Source Email Citation -->
+          <div class="email-citation-box" *ngIf="finding.source_email">
+            <div class="citation-header">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                <polyline points="22,6 12,13 2,6"></polyline>
+              </svg>
+              <strong>Source Outlook Email #{{ finding.source_email.email_id }}</strong>
+              <span class="citation-date">{{ finding.source_email.received_date }}</span>
+            </div>
+            <div class="citation-meta">
+              <span><strong>From:</strong> {{ finding.source_email.sender }}</span>
+              <span><strong>Subject:</strong> {{ finding.source_email.subject }}</span>
+            </div>
+            <div class="citation-snippet" *ngIf="finding.source_email.snippet">
+              "{{ finding.source_email.snippet }}"
+            </div>
+          </div>
+
+          <!-- Actionable Recommendation -->
+          <div class="finding-rec-row" *ngIf="finding.actionable_recommendation">
+            <span class="rec-label">💡 Recommendation:</span>
+            <span class="rec-text">{{ finding.actionable_recommendation }}</span>
+          </div>
+        </div>
+
+        <div class="empty-findings-state" *ngIf="getFilteredFindings().length === 0">
+          <span>No findings detected for this filter category.</span>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -98,23 +233,21 @@
                   {{ cohort.candidateCount ? (( (cohort.evaluatorsMapped || 0) / cohort.candidateCount) * 100 | number:'1.0-0') : 0 }}%
                 </span>
               </div>
-              <div class="progress-track">
-                <div class="progress-bar" 
-                     [style.width.%]="cohort.candidateCount ? (((cohort.evaluatorsMapped || 0) / cohort.candidateCount) * 100) : 0">
-                </div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" [style.width.%]="cohort.candidateCount ? (((cohort.evaluatorsMapped || 0) / cohort.candidateCount) * 100) : 0"></div>
               </div>
             </div>
           </td>
           <td>
-            <span class="date-tag">{{ cohort.startDate | date:'dd-MMM-yyyy' }}</span>
+            <span class="date-display">{{ cohort.startDate | date:'mediumDate' }}</span>
           </td>
           <td>
-            <div class="status-dropdown-wrap">
-              <select class="cohort-status-select" 
-                      [ngClass]="getStatusClass(cohort.status)"
+            <div class="status-cell-wrapper">
+              <select class="status-select-native" 
+                      [ngClass]="getStatusClass(cohort.status)" 
                       [ngModel]="cohort.status" 
                       (ngModelChange)="onStatusChange(cohort, $event)"
-                      title="Change cohort status">
+                      [disabled]="loading">
                 <option value="Active">Active</option>
                 <option value="Mapping in Progress">Mapping in Progress</option>
                 <option value="Completed">Completed</option>
@@ -122,126 +255,96 @@
               </select>
             </div>
           </td>
-          <td class="text-center">
-            <div class="cohort-actions-cell">
-              <button class="btn btn-sm btn-outline-primary" (click)="openMapping(cohort.cohortId)" title="Open mapping console">
-                <span>Open Mapping</span>
-                <span>&rarr;</span>
+          <td class="text-center actions-cell">
+            <div class="action-btn-group">
+              <!-- Agent 1 per-cohort audit -->
+              <button class="btn-action-audit" (click)="triggerAgent1(cohort)" title="Agent 1: Audit Outlook emails for this cohort">
+                🤖 Audit
               </button>
-              <button class="btn btn-sm btn-outline-danger" (click)="deleteCohort(cohort)" title="Delete this cohort batch">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="3 6 5 6 21 6"></polyline>
-                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                </svg>
-                <span>Delete</span>
+              <button class="btn btn-sm btn-outline" (click)="openMapping(cohort.cohortId)">
+                Mapping &rarr;
+              </button>
+              <button class="btn-icon-danger" (click)="deleteCohort(cohort)" title="Delete cohort">
+                &times;
               </button>
             </div>
           </td>
         </tr>
         <tr *ngIf="filteredCohorts.length === 0 && !loading">
-          <td colspan="6" class="text-center empty-state">
-            <div class="empty-state-content">
-              <span class="empty-title">No cohorts found</span>
-              <span class="empty-hint">Try adjusting your search criteria or create a new cohort batch.</span>
-            </div>
-          </td>
+          <td colspan="6" class="text-center empty-state">No cohorts found matching your criteria.</td>
         </tr>
       </tbody>
     </table>
   </div>
 
-  <!-- Progressive View More Section -->
-  <div class="view-more-container" *ngIf="hasMore || loadingMore">
-    <button class="btn btn-secondary view-more-btn" (click)="viewMore()" [disabled]="loadingMore || loading">
-      <span *ngIf="!loadingMore">View More</span>
-      <span *ngIf="loadingMore">Loading, please wait...</span>
+  <div class="view-more-container" *ngIf="hasMore">
+    <button class="btn btn-secondary" (click)="viewMore()" [disabled]="loadingMore">
+      <span *ngIf="!loadingMore">View More Cohorts</span>
+      <span *ngIf="loadingMore">Loading...</span>
     </button>
   </div>
 
-</div>
-
-<!-- Create New Cohort Modal with Candidate Excel Upload -->
-<div class="modal-overlay" *ngIf="showModal">
-  <div class="modal">
-    <div class="modal-header">
-      <h3>Create New Cohort Batch</h3>
-      <button class="close-btn" (click)="closeModal()">&times;</button>
-    </div>
-    <div class="modal-body">
-      
-      <div *ngIf="modalError" class="validation-error-banner">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"></circle>
-          <line x1="12" y1="8" x2="12" y2="12"></line>
-          <line x1="12" y1="16" x2="12.01" y2="16"></line>
-        </svg>
-        <span>{{ modalError }}</span>
+  <!-- Create Cohort Modal -->
+  <div class="modal-backdrop" *ngIf="showModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Create New Training Cohort</h3>
+        <button class="modal-close-btn" (click)="closeModal()">&times;</button>
       </div>
 
-      <div class="form-grid-2">
+      <div class="modal-body">
+        <div class="alert-error" *ngIf="modalError">
+          {{ modalError }}
+        </div>
+
         <div class="form-group">
           <label>Cohort Name *</label>
-          <input type="text" [(ngModel)]="newCohort.cohortName" placeholder="e.g. Batch-4 (DevOps & Cloud)" class="form-input">
+          <input type="text" [(ngModel)]="newCohort.cohortName" placeholder="e.g. Java Full Stack Autumn" class="form-control">
         </div>
+
         <div class="form-group">
           <label>Batch Code *</label>
-          <input type="text" [(ngModel)]="newCohort.batchCode" placeholder="e.g. BATCH-04" class="form-input">
-        </div>
-      </div>
-
-      <div class="form-grid-2">
-        <div class="form-group">
-          <label>Start Date</label>
-          <input type="date" [(ngModel)]="newCohort.startDate" class="form-input">
-        </div>
-        <div class="form-group">
-          <label>Status</label>
-          <select [(ngModel)]="newCohort.status" class="form-select">
-            <option value="Active">Active</option>
-            <option value="Mapping in Progress">Mapping in Progress</option>
-            <option value="Completed">Completed</option>
-            <option value="Not Started">Not Started</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- Candidate Excel Upload Section -->
-      <div class="form-group excel-upload-section">
-        <label>Upload Candidate Roster (Excel) <span class="label-optional">(Recommended)</span></label>
-        
-        <div class="excel-dropzone" *ngIf="!selectedCandidateFile">
-          <input type="file" id="candidateExcelInput" (change)="onCandidateFileSelected($event)" accept=".xlsx, .xls" class="file-input-hidden">
-          <label for="candidateExcelInput" class="dropzone-label">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-              <polyline points="14 2 14 8 20 8"></polyline>
-              <line x1="12" y1="18" x2="12" y2="12"></line>
-              <line x1="9" y1="15" x2="15" y2="15"></line>
-            </svg>
-            <span class="drop-text">Click to choose Candidate Excel (<code>.xlsx</code>)</span>
-            <span class="drop-subtext">Automatically creates & maps candidates into this batch</span>
-          </label>
+          <input type="text" [(ngModel)]="newCohort.batchCode" placeholder="e.g. BATCH-2026-Q4" class="form-control">
         </div>
 
-        <div class="file-attached-pill" *ngIf="selectedCandidateFile">
-          <div class="file-info">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-              <polyline points="14 2 14 8 20 8"></polyline>
-            </svg>
-            <span class="file-name">{{ candidateFileName }}</span>
+        <div class="form-row">
+          <div class="form-group col">
+            <label>Start Date</label>
+            <input type="date" [(ngModel)]="newCohort.startDate" class="form-control">
           </div>
-          <button type="button" class="btn-remove-file" (click)="removeSelectedFile()" title="Remove file">&times;</button>
+          <div class="form-group col">
+            <label>Initial Status</label>
+            <select [(ngModel)]="newCohort.status" class="form-control">
+              <option value="Active">Active</option>
+              <option value="Mapping in Progress">Mapping in Progress</option>
+              <option value="Not Started">Not Started</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Attach Candidate Excel (Optional)</label>
+          <div class="file-upload-box">
+            <input type="file" id="candidateExcelInput" (change)="onCandidateFileSelected($event)" accept=".xlsx, .xls" hidden>
+            <label for="candidateExcelInput" class="upload-label" *ngIf="!selectedCandidateFile">
+              <span>Click to select Candidate roster (.xlsx)</span>
+            </label>
+            <div class="file-selected-row" *ngIf="selectedCandidateFile">
+              <span>📄 {{ candidateFileName }}</span>
+              <button type="button" class="btn-remove-file" (click)="removeSelectedFile()">&times;</button>
+            </div>
+          </div>
         </div>
       </div>
 
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" (click)="closeModal()" [disabled]="savingCohort">Cancel</button>
-      <button class="btn btn-primary" (click)="saveCohort()" [disabled]="!newCohort.cohortName || !newCohort.batchCode || savingCohort">
-        <span *ngIf="!savingCohort">Create Cohort Batch</span>
-        <span *ngIf="savingCohort">Creating & Uploading...</span>
-      </button>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeModal()" [disabled]="savingCohort">Cancel</button>
+        <button class="btn btn-primary" (click)="saveCohort()" [disabled]="savingCohort">
+          <span *ngIf="!savingCohort">Create Cohort</span>
+          <span *ngIf="savingCohort">Saving...</span>
+        </button>
+      </div>
     </div>
   </div>
+
 </div>

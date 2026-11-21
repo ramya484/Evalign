@@ -1,4 +1,4 @@
-"""MCP Attachment Tools – 2 tools for attachments and email body content."""
+"""MCP Attachment Tools Â– 2 tools for attachments and email body content."""
 from app.database.connection import AsyncSessionLocal
 from app.database.repositories.email_repository import EmailRepository
 from app.utils.logging import get_logger

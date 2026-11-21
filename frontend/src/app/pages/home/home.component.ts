@@ -1,9 +1,15 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { EvaluatorService } from '../../services/evaluator.service';
 import { CohortService } from '../../services/cohort.service';
+import {
+  AIWorkflowService,
+  ShortlistingStats,
+  ShortlistCandidateItem,
+  ShortlistResponse
+} from '../../services/ai-workflow.service';
 import { Evaluator } from '../../models/evaluator.model';
 import { Cohort } from '../../models/cohort.model';
 
@@ -32,7 +38,7 @@ export class HomeComponent implements OnInit {
   };
 
   dateFilterError: string = '';
-  notification: { message: string; type: 'success' | 'error' } | null = null;
+  notification: { message: string; type: 'success' | 'error' | 'warning' } | null = null;
   
   // Cohort Modal
   selectedCohortId: number | null = null;
@@ -72,9 +78,28 @@ export class HomeComponent implements OnInit {
   page: number = 0;
   pageSize: number = 15;
 
+  // ---------------------------------------------------------------------------
+  // Agent 3 – Shortlisting Agent State (Shared by Dashboard and Pool)
+  // ---------------------------------------------------------------------------
+  shortlistStats: ShortlistingStats = {
+    total_processed: 0,
+    shortlisted_count: 0,
+    recommended_count: 0,
+    approved_count: 0,
+    rejected_count: 0,
+    execution_status: 'IDLE',
+    average_score: 0.0
+  };
+  shortlistRecommendations: ShortlistCandidateItem[] = [];
+  shortlistLoading: boolean = false;
+  showPoolShortlistPanel: boolean = false;
+  shortlistFilterTab: string = 'ALL';
+  selectedCohortForShortlist: number | null = null;
+
   constructor(
     private evaluatorService: EvaluatorService,
-    private cohortService: CohortService
+    private cohortService: CohortService,
+    private aiWorkflowService: AIWorkflowService
   ) {}
 
   ngOnInit(): void {
@@ -82,14 +107,114 @@ export class HomeComponent implements OnInit {
     this.loadSummaryMetrics();
     this.loadEvaluators(true);
     this.loadCohorts();
+    this.loadShortlistData();
   }
 
-  showNotification(message: string, type: 'success' | 'error' = 'success'): void {
+  showNotification(message: string, type: 'success' | 'error' | 'warning' = 'success'): void {
     this.notification = { message, type };
     setTimeout(() => {
       this.notification = null;
-    }, 4000);
+    }, 4500);
   }
+
+  // ---------------------------------------------------------------------------
+  // Agent 3 – Shortlisting Agent Methods
+  // ---------------------------------------------------------------------------
+
+  loadShortlistData(): void {
+    this.aiWorkflowService.getShortlistStats().subscribe({
+      next: (stats) => {
+        if (stats && stats.execution_status) {
+          this.shortlistStats = stats;
+        }
+      },
+      error: () => {}
+    });
+
+    this.aiWorkflowService.getShortlistResults().subscribe({
+      next: (res) => {
+        if (res && res.recommendations) {
+          this.shortlistRecommendations = res.recommendations;
+        }
+      },
+      error: () => {}
+    });
+  }
+
+  runShortlistingAgent(source: 'DASHBOARD' | 'POOL'): void {
+    this.shortlistLoading = true;
+    if (source === 'POOL') {
+      this.showPoolShortlistPanel = true;
+    }
+
+    const payload = {
+      cohort_id: this.selectedCohortForShortlist || undefined,
+      vertical: this.filters.vertical !== 'All' ? this.filters.vertical : undefined,
+      domain: this.filters.domain !== 'All' ? this.filters.domain : undefined,
+      target_count: 12
+    };
+
+    this.aiWorkflowService.runShortlisting(payload).subscribe({
+      next: (res) => {
+        this.shortlistLoading = false;
+        if (res.stats) {
+          this.shortlistStats = res.stats;
+        }
+        if (res.recommendations) {
+          this.shortlistRecommendations = res.recommendations;
+        }
+        this.showNotification(`Agent 3: Shortlisting completed! Processed ${this.shortlistStats.total_processed} records. ${this.shortlistStats.shortlisted_count} shortlisted.`, 'success');
+      },
+      error: (err) => {
+        this.shortlistLoading = false;
+        const msg = err.error?.detail || err.error?.message || 'Agent 3 shortlisting failed';
+        this.showNotification(msg, 'error');
+      }
+    });
+  }
+
+  applyShortlistDecision(item: ShortlistCandidateItem, decision: 'APPROVE' | 'REJECT'): void {
+    this.aiWorkflowService.submitShortlistDecision(item.id, decision, undefined, this.selectedCohortForShortlist || undefined).subscribe({
+      next: (res) => {
+        item.status = decision === 'APPROVE' ? 'APPROVED' : 'REJECTED';
+        if (res.stats) {
+          this.shortlistStats = res.stats;
+        } else {
+          if (decision === 'APPROVE') {
+            this.shortlistStats.approved_count++;
+          } else {
+            this.shortlistStats.rejected_count++;
+          }
+        }
+        const actionLabel = decision === 'APPROVE' ? 'Approved & Shortlisted' : 'Rejected';
+        this.showNotification(`${actionLabel}: ${item.name}`);
+        this.loadEvaluators();
+      },
+      error: (err) => {
+        this.showNotification(`Failed to record decision for ${item.name}`, 'error');
+      }
+    });
+  }
+
+  getFilteredShortlist(): ShortlistCandidateItem[] {
+    if (this.shortlistFilterTab === 'ALL') return this.shortlistRecommendations;
+    if (this.shortlistFilterTab === 'RECOMMENDED') return this.shortlistRecommendations.filter(r => r.status === 'RECOMMENDED');
+    if (this.shortlistFilterTab === 'APPROVED') return this.shortlistRecommendations.filter(r => r.status === 'APPROVED');
+    if (this.shortlistFilterTab === 'REJECTED') return this.shortlistRecommendations.filter(r => r.status === 'REJECTED');
+    return this.shortlistRecommendations;
+  }
+
+  scrollToPool(): void {
+    this.showPoolShortlistPanel = true;
+    const poolEl = document.getElementById('pool-section-anchor');
+    if (poolEl) {
+      poolEl.scrollIntoView({ behavior: 'smooth' });
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Standard Evaluator Pool Methods
+  // ---------------------------------------------------------------------------
 
   loadFilters(): void {
     this.evaluatorService.getVerticals().subscribe(v => this.verticals = v || []);
@@ -107,7 +232,6 @@ export class HomeComponent implements OnInit {
   }
 
   loadEvaluators(reset: boolean = true): void {
-    // Validate date range before sending
     if (this.filters.interviewFrom && this.filters.interviewTo) {
       if (this.filters.interviewFrom > this.filters.interviewTo) {
         this.dateFilterError = 'From Date cannot be after To Date';
@@ -163,10 +287,7 @@ export class HomeComponent implements OnInit {
     this.cohortService.getCohorts().subscribe({
       next: (res) => {
         this.cohorts = res || [];
-        this.activeCohortsCount = this.cohorts.filter(c => (c.status || '').toUpperCase() === 'ACTIVE').length;
-        if (this.cohorts.length > 0 && !this.selectedCohortId) {
-          this.selectedCohortId = this.cohorts[0].cohortId;
-        }
+        this.activeCohortsCount = this.cohorts.filter(c => c.status === 'Active' || c.status === 'ACTIVE').length;
       },
       error: (err) => console.error('Failed to load cohorts', err)
     });
@@ -190,45 +311,18 @@ export class HomeComponent implements OnInit {
     this.filters.interviewFrom = '';
     this.filters.interviewTo = '';
     this.dateFilterError = '';
-    this.loadEvaluators();
+    this.loadEvaluators(true);
   }
 
-  toggleAvailability(evaluator: Evaluator): void {
-    const isNowAvailable = evaluator.availabilityStatus === 'AVAILABLE';
-    const newStatus = isNowAvailable ? 'UNAVAILABLE' : 'AVAILABLE';
-    const today = new Date().toISOString().substring(0, 10);
-    const nextWeek = new Date(Date.now() + 5 * 86400000).toISOString().substring(0, 10);
-
-    const updatePayload = {
-      availabilityStatus: newStatus,
-      unavailableFrom: newStatus === 'UNAVAILABLE' ? today : undefined,
-      unavailableTo: newStatus === 'UNAVAILABLE' ? nextWeek : undefined,
-      statusReason: newStatus === 'UNAVAILABLE' ? (evaluator.statusReason || 'Temporary unavailability') : undefined,
-      isPermanent: newStatus === 'UNAVAILABLE' ? (evaluator.isPermanent || false) : false
-    };
-
-    this.evaluatorService.updateAvailability(evaluator.evaluatorId, updatePayload).subscribe({
-      next: (updated) => {
-        evaluator.availabilityStatus = updated.availabilityStatus;
-        evaluator.unavailableFrom = updated.unavailableFrom;
-        evaluator.unavailableTo = updated.unavailableTo;
-        evaluator.statusReason = updated.statusReason;
-        evaluator.isPermanent = updated.isPermanent;
-        this.showNotification(`Updated ${evaluator.name} status to ${newStatus}`);
-        this.loadSummaryMetrics();
-      },
-      error: (err) => this.showNotification(err.error?.message || 'Failed to update availability', 'error')
-    });
-  }
-
-  // --- Status Reason Modal Methods ---
   openStatusModal(evaluator: Evaluator): void {
     this.selectedEvaluatorForStatus = evaluator;
     const today = new Date().toISOString().substring(0, 10);
-    const nextWeek = new Date(Date.now() + 5 * 86400000).toISOString().substring(0, 10);
+    const nextWeekDate = new Date();
+    nextWeekDate.setDate(nextWeekDate.getDate() + 7);
+    const nextWeek = nextWeekDate.toISOString().substring(0, 10);
 
     this.statusModalForm = {
-      statusReason: evaluator.statusReason || 'On Leave',
+      statusReason: evaluator.statusReason || '',
       isPermanent: evaluator.isPermanent || false,
       availabilityStatus: evaluator.availabilityStatus || 'UNAVAILABLE',
       unavailableFrom: evaluator.unavailableFrom ? String(evaluator.unavailableFrom) : today,
@@ -297,7 +391,6 @@ export class HomeComponent implements OnInit {
     });
   }
 
-  // --- Excel Upload & Download ---
   onFileUpload(event: any): void {
     const file = event.target.files[0];
     if (file) {
@@ -334,7 +427,6 @@ export class HomeComponent implements OnInit {
     });
   }
 
-  // --- Cohort Modal Methods ---
   openCohortModal(evaluator: Evaluator): void {
     this.selectedEvaluatorForCohort = evaluator;
     this.showCohortModal = true;
